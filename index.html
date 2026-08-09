@@ -1026,15 +1026,11 @@
       });
     });
 
-    // Sync tabs on scroll
-    let scrollTimeout;
+// Sync tabs during swiping
     pages.addEventListener('scroll', () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        const index = Math.round(pages.scrollLeft / pages.clientWidth);
-        updateTabs(index);
-      }, 50);
-    });
+      const index = Math.round(pages.scrollLeft / pages.clientWidth);
+      updateTabs(index);
+    }, { passive: true });
 
     // Prevent pull-to-refresh weirdness a bit
     document.body.addEventListener('touchmove', (e) => {
@@ -1046,9 +1042,22 @@
     // ===== INIT =====
     render();
 
-    // Register service worker
+    // ===== AUTOMATISCHE VERTSING BIJ VERCEL UPDATES =====
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      let refreshing = false;
+
+      // Zodra de nieuwe Service Worker actief wordt, herlaadt de pagina 1x automatisch
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        // Check bij het openen meteen of er een nieuwe Vercel-versie klaarstaat
+        reg.update();
+      }).catch(() => {});
     }
   </script>
 </body>
