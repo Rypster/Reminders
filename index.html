@@ -8,8 +8,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="description" content="Rustige taken- en ideeënapp voor Vandaag, Moet, Mag en Idee" />
   <link rel="manifest" href="manifest.json" />
-<link rel="icon" type="image/png" href="icon-192.png" />
-<link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Reminders</title>
   <style>
     :root {
@@ -110,32 +110,28 @@
       margin-bottom: 2px;
     }
 
-/* ===== SWIPE CONTAINER ===== */
-.pages {
-  flex: 1;
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  
-  /* TOEVOEGEN: Dwingt af dat de scroll-interactie op de eerstvolgende pagina stopt */
-  scroll-snap-stop: always; 
-}
+    /* ===== SWIPE CONTAINER ===== */
+    .pages {
+      flex: 1;
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      scroll-snap-stop: always; 
+    }
 
-.page {
-  min-width: 100%;
-  width: 100%;
-  scroll-snap-align: start;
-  
-  /* TOEVOEGEN: Extra beveiliging voor elk individueel scherm */
-  scroll-snap-stop: always; 
-  
-  overflow-y: auto;
-  padding: 16px 16px 40px;
-  -webkit-overflow-scrolling: touch;
-}
+    .page {
+      min-width: 100%;
+      width: 100%;
+      /* AANGEPAST: Snap nu op het midden (voorkomt doorschieten naar links) */
+      scroll-snap-align: center;
+      scroll-snap-stop: always; 
+      overflow-y: auto;
+      padding: 16px 16px 40px;
+      -webkit-overflow-scrolling: touch;
+    }
 
     /* ===== INPUT BAR ===== */
     .input-section {
@@ -477,6 +473,17 @@
       opacity: 1;
     }
 
+    /* TOEVOEGEN: Versienummer styling */
+    .version-tag {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 6px 0 10px;
+      opacity: 0.5;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
     /* Small screens */
     @media (max-width: 360px) {
       .tab { font-size: 12px; padding: 12px 2px 10px; }
@@ -555,6 +562,9 @@
         <div id="ideeContent"></div>
       </div>
     </div>
+
+    <!-- TOEVOEGEN: Versienummer onderin -->
+    <div class="version-tag">v1.0.1</div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -655,10 +665,6 @@
 
     // ===== RENDER PAGES =====
     function render() {
-      // Clean old done items that are not from today (move to pure archive logic)
-      // We keep done items that were done today visible with strikethrough,
-      // older done items go to archive section.
-
       renderVandaag();
       renderCategory('Moet', 'moetContent');
       renderCategory('Mag', 'magContent');
@@ -669,17 +675,14 @@
       const container = document.getElementById('vandaagContent');
       const today = todayStr();
 
-      // Active today tasks (not done, or done today)
       const todayActive = tasks.filter(t => 
         !t.done && t.date === today
       );
 
-      // Done today (still show with strikethrough)
       const todayDone = tasks.filter(t => 
         t.done && t.doneDate === today
       );
 
-      // If little space / empty, also show some Mag + Idee without date or future
       const magSuggestions = tasks.filter(t => 
         !t.done && t.type === 'Mag' && (!t.date || t.date > today)
       ).slice(0, 2);
@@ -708,7 +711,6 @@
         }
       }
 
-      // Suggestions when there's room
       if (todayActive.length < 4) {
         if (magSuggestions.length) {
           html += `<div class="section-title" style="margin-top:28px">Misschien leuk (Mag)</div>`;
@@ -729,7 +731,6 @@
       const active = tasks.filter(t => t.type === type && !t.done);
       const archived = tasks.filter(t => t.type === type && t.done);
 
-      // Sort active: with date first (soonest), then no date
       active.sort((a, b) => {
         if (a.date && b.date) return a.date.localeCompare(b.date);
         if (a.date) return -1;
@@ -737,7 +738,6 @@
         return 0;
       });
 
-      // Archive: newest done first
       archived.sort((a, b) => (b.doneDate || '').localeCompare(a.doneDate || ''));
 
       let html = '';
@@ -756,7 +756,6 @@
         `;
       } else {
         if (active.length) {
-          // Group a bit
           const soon = active.filter(t => t.date && (isToday(t.date) || isThisWeek(t.date)));
           const later = active.filter(t => t.date && !isToday(t.date) && !isThisWeek(t.date));
           const noDate = active.filter(t => !t.date);
@@ -805,7 +804,6 @@
       if (!task) return;
 
       if (task.done) {
-        // Reactivate → put on today
         task.done = false;
         task.doneDate = null;
         task.date = todayStr();
@@ -826,7 +824,6 @@
       editingId = id;
       document.getElementById('editingBanner').classList.add('show');
 
-      // Go to Vandaag tab
       document.getElementById('pages').scrollTo({ left: 0, behavior: 'smooth' });
       updateTabs(0);
 
@@ -834,7 +831,6 @@
       input.value = task.text;
       selectedType = task.type;
 
-      // Bepaal "when" op basis van de bestaande datum
       if (!task.date) {
         selectedWhen = null;
         customDate = null;
@@ -846,11 +842,9 @@
         customDate = task.date;
       }
 
-      // Open options
       document.getElementById('options').classList.add('open');
       document.getElementById('inputWrapper').classList.add('focused');
 
-      // Set chips
       document.querySelectorAll('#typeChips .chip').forEach(c => {
         c.classList.toggle('active', c.dataset.type === selectedType);
       });
@@ -868,7 +862,6 @@
 
       updateSaveBtn();
       input.focus();
-      // auto grow
       input.style.height = 'auto';
       input.style.height = input.scrollHeight + 'px';
     }
@@ -912,7 +905,6 @@
       } else if (selectedWhen === 'datum' && customDate) {
         date = customDate;
       }
-      // als selectedWhen === null → date blijft null (geen datum)
 
       if (editingId) {
         const task = tasks.find(t => t.id === editingId);
@@ -998,7 +990,7 @@
 
     document.getElementById('saveBtn').addEventListener('click', saveTask);
 
-    // Click outside to close options (if not editing)
+    // Click outside to close options
     document.addEventListener('click', (e) => {
       if (!inputWrapper.contains(e.target) && !editingId) {
         if (!mainInput.value.trim()) {
@@ -1026,7 +1018,7 @@
       });
     });
 
-// Sync tabs during swiping
+    // Sync tabs during swiping
     pages.addEventListener('scroll', () => {
       const index = Math.round(pages.scrollLeft / pages.clientWidth);
       updateTabs(index);
@@ -1042,11 +1034,10 @@
     // ===== INIT =====
     render();
 
-    // ===== AUTOMATISCHE VERTSING BIJ VERCEL UPDATES =====
+    // ===== AUTOMATISCHE VERVERSSING BIJ VERCEL UPDATES =====
     if ('serviceWorker' in navigator) {
       let refreshing = false;
 
-      // Zodra de nieuwe Service Worker actief wordt, herlaadt de pagina 1x automatisch
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!refreshing) {
           refreshing = true;
@@ -1055,7 +1046,6 @@
       });
 
       navigator.serviceWorker.register('sw.js').then((reg) => {
-        // Check bij het openen meteen of er een nieuwe Vercel-versie klaarstaat
         reg.update();
       }).catch(() => {});
     }
