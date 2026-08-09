@@ -1,4 +1,4 @@
-# InJeHoofd
+# Reminders
 
 Rustige PWA voor taken en ideeën.
 
