@@ -9,7 +9,7 @@
   <meta name="description" content="Rustige taken- en ideeënapp voor Vandaag, Moet, Mag en Idee" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
-  <title>InJeHoofd</title>
+  <title>Reminders</title>
   <style>
     :root {
       --bg: #f8f7f4;
@@ -128,6 +128,7 @@
       min-width: 100%;
       width: 100%;
       scroll-snap-align: start;
+      scroll-snap-stop: always;
       overflow-y: auto;
       padding: 16px 16px 40px;
       -webkit-overflow-scrolling: touch;
@@ -179,8 +180,8 @@
     }
 
     .options.open {
-      max-height: 220px;
-      padding: 12px 16px 16px;
+      max-height: 320px;
+      padding: 14px 16px 18px;
       border-top-color: var(--border);
     }
 
@@ -560,7 +561,7 @@
     let tasks = JSON.parse(localStorage.getItem('injehoofd_tasks') || '[]');
     let editingId = null;
     let selectedType = null;
-    let selectedWhen = 'vandaag';
+    let selectedWhen = null;   // null = geen datum
     let customDate = null;
 
     // ===== HELPERS =====
@@ -829,8 +830,18 @@
       const input = document.getElementById('mainInput');
       input.value = task.text;
       selectedType = task.type;
-      selectedWhen = task.date ? (isToday(task.date) ? 'vandaag' : 'datum') : 'vandaag';
-      customDate = task.date && !isToday(task.date) ? task.date : null;
+
+      // Bepaal "when" op basis van de bestaande datum
+      if (!task.date) {
+        selectedWhen = null;
+        customDate = null;
+      } else if (isToday(task.date)) {
+        selectedWhen = 'vandaag';
+        customDate = null;
+      } else {
+        selectedWhen = 'datum';
+        customDate = task.date;
+      }
 
       // Open options
       document.getElementById('options').classList.add('open');
@@ -870,7 +881,7 @@
       input.value = '';
       input.style.height = 'auto';
       selectedType = null;
-      selectedWhen = 'vandaag';
+      selectedWhen = null;
       customDate = null;
       document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
       document.getElementById('dateInput').classList.remove('show');
@@ -885,9 +896,9 @@
       if (!text || !selectedType) return;
 
       let date = null;
-      if (selectedWhen === 'vandaag') date = todayStr();
-      else if (selectedWhen === 'week') {
-        // next few days - just set to today + 3 for simplicity, or leave flexible
+      if (selectedWhen === 'vandaag') {
+        date = todayStr();
+      } else if (selectedWhen === 'week') {
         const d = new Date();
         d.setDate(d.getDate() + 3);
         date = d.toISOString().slice(0, 10);
@@ -898,6 +909,7 @@
       } else if (selectedWhen === 'datum' && customDate) {
         date = customDate;
       }
+      // als selectedWhen === null → date blijft null (geen datum)
 
       if (editingId) {
         const task = tasks.find(t => t.id === editingId);
@@ -905,7 +917,6 @@
           task.text = text;
           task.type = selectedType;
           task.date = date;
-          // if it was done, keep done status unless we want to force active
         }
         showToast('Bijgewerkt');
         cancelEdit();

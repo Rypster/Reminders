@@ -1,6 +1,6 @@
 {
-  "name": "InJeHoofd",
-  "short_name": "InJeHoofd",
+  "name": "Reminders",
+  "short_name": "Reminders",
   "description": "Rustige taken- en ideeënapp: Vandaag, Moet, Mag en Idee",
   "start_url": "./index.html",
   "display": "standalone",
