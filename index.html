@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#f8f7f4" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="description" content="Rustige taken- en ideeënapp voor Vandaag, Moet, Mag en Idee" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+  <title>InJeHoofd</title>
+  <style>
+    :root {
+      --bg: #f8f7f4;
+      --surface: #ffffff;
+      --text: #2c2c2a;
+      --text-muted: #8a8a82;
+      --border: #e8e6e0;
+      --shadow: 0 2px 12px rgba(0,0,0,0.04);
+      
+      /* Categorie kleuren - rustig */
+      --moet: #5b7c99;
+      --moet-bg: #eef3f7;
+      --moet-border: #d4e0ea;
+      
+      --mag: #5a9a8a;
+      --mag-bg: #eef7f4;
+      --mag-border: #d0e8e0;
+      
+      --idee: #8b7aa8;
+      --idee-bg: #f4f1f8;
+      --idee-border: #e4dceb;
+      
+      --done: #b0b0a8;
+      --radius: 16px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* ===== TABS ===== */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 4px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 14px 4px 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+
+    .tab.active {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 20%;
+      right: 20%;
+      height: 3px;
+      background: var(--text);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .tab-icon {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    /* ===== SWIPE CONTAINER ===== */
+    .pages {
+      flex: 1;
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .pages::-webkit-scrollbar {
+      display: none;
+    }
+
+    .page {
+      min-width: 100%;
+      width: 100%;
+      scroll-snap-align: start;
+      overflow-y: auto;
+      padding: 16px 16px 40px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ===== INPUT BAR ===== */
+    .input-section {
+      margin-bottom: 20px;
+    }
+
+    .input-wrapper {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+
+    .input-wrapper.focused {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .main-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 16px 18px;
+      font-size: 16px;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      resize: none;
+      min-height: 52px;
+      line-height: 1.4;
+    }
+
+    .main-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .options {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 16px;
+      background: #fafaf8;
+      border-top: 1px solid transparent;
+    }
+
+    .options.open {
+      max-height: 220px;
+      padding: 12px 16px 16px;
+      border-top-color: var(--border);
+    }
+
+    .option-row {
+      margin-bottom: 12px;
+    }
+
+    .option-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 8px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .chip:active {
+      transform: scale(0.96);
+    }
+
+    .chip.active {
+      border-color: transparent;
+      color: white;
+    }
+
+    .chip[data-type="Moet"].active { background: var(--moet); }
+    .chip[data-type="Mag"].active { background: var(--mag); }
+    .chip[data-type="Idee"].active { background: var(--idee); }
+
+    .chip[data-when].active {
+      background: var(--text);
+      color: white;
+    }
+
+    .date-input {
+      display: none;
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      background: var(--surface);
+    }
+
+    .date-input.show {
+      display: block;
+    }
+
+    .save-btn {
+      width: 100%;
+      margin-top: 4px;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--text);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+
+    .save-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .save-btn:active:not(:disabled) {
+      opacity: 0.85;
+    }
+
+    /* ===== TASK CARDS ===== */
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 24px 0 10px;
+      padding-left: 4px;
+    }
+
+    .section-title:first-of-type {
+      margin-top: 0;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .task-card {
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      padding: 14px 14px 14px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      transition: opacity 0.2s, transform 0.15s;
+      position: relative;
+    }
+
+    .task-card.done {
+      opacity: 0.65;
+    }
+
+    .task-card.done .task-text {
+      text-decoration: line-through;
+      color: var(--done);
+    }
+
+    .task-card.type-Moet {
+      border-left: 4px solid var(--moet);
+      background: linear-gradient(to right, var(--moet-bg), var(--surface) 40%);
+    }
+
+    .task-card.type-Mag {
+      border-left: 4px solid var(--mag);
+      background: linear-gradient(to right, var(--mag-bg), var(--surface) 40%);
+    }
+
+    .task-card.type-Idee {
+      border-left: 4px solid var(--idee);
+      background: linear-gradient(to right, var(--idee-bg), var(--surface) 40%);
+    }
+
+    .checkbox {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      border: 2px solid #c8c8c0;
+      flex-shrink: 0;
+      margin-top: 1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      background: white;
+    }
+
+    .checkbox.checked {
+      background: var(--text);
+      border-color: var(--text);
+    }
+
+    .checkbox.checked::after {
+      content: "✓";
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .task-content {
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .task-text {
+      font-size: 15.5px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .meta-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #f0efe9;
+      color: var(--text-muted);
+    }
+
+    .meta-tag.type {
+      font-weight: 600;
+    }
+
+    .meta-tag.type-Moet { background: var(--moet-bg); color: var(--moet); }
+    .meta-tag.type-Mag { background: var(--mag-bg); color: var(--mag); }
+    .meta-tag.type-Idee { background: var(--idee-bg); color: var(--idee); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .emoji {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* Archive separator */
+    .archive-sep {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 28px 0 14px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .archive-sep::before,
+    .archive-sep::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Edit mode indicator */
+    .editing-banner {
+      display: none;
+      background: #fff8e6;
+      color: #8a6d1d;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+      border-bottom: 1px solid #f0e0b0;
+    }
+
+    .editing-banner.show {
+      display: block;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #2c2c2a;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 100;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Small screens */
+    @media (max-width: 360px) {
+      .tab { font-size: 12px; padding: 12px 2px 10px; }
+      .tab-icon { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="editing-banner" id="editingBanner">Je bewerkt een item — sla op of tik ergens anders om te annuleren</div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-index="0">
+        <span class="tab-icon">🌐</span>
+        Vandaag
+      </button>
+      <button class="tab" data-index="1">
+        <span class="tab-icon">🏋️</span>
+        Moet
+      </button>
+      <button class="tab" data-index="2">
+        <span class="tab-icon">💡</span>
+        Mag
+      </button>
+      <button class="tab" data-index="3">
+        <span class="tab-icon">💭</span>
+        Idee
+      </button>
+    </div>
+
+    <div class="pages" id="pages">
+      <!-- Vandaag -->
+      <div class="page" id="page-0">
+        <div class="input-section">
+          <div class="input-wrapper" id="inputWrapper">
+            <textarea class="main-input" id="mainInput" placeholder="Wat zit er in je hoofd?..." rows="1"></textarea>
+            <div class="options" id="options">
+              <div class="option-row">
+                <div class="option-label">Type</div>
+                <div class="chips" id="typeChips">
+                  <button class="chip" data-type="Moet">Moet</button>
+                  <button class="chip" data-type="Mag">Mag</button>
+                  <button class="chip" data-type="Idee">Idee</button>
+                </div>
+              </div>
+              <div class="option-row">
+                <div class="option-label">Wanneer</div>
+                <div class="chips" id="whenChips">
+                  <button class="chip" data-when="vandaag">Vandaag</button>
+                  <button class="chip" data-when="week">Deze week</button>
+                  <button class="chip" data-when="maand">Deze maand</button>
+                  <button class="chip" data-when="datum">📅 Datum</button>
+                </div>
+                <input type="date" class="date-input" id="dateInput" />
+              </div>
+              <button class="save-btn" id="saveBtn" disabled>Opslaan</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="vandaagContent"></div>
+      </div>
+
+      <!-- Moet -->
+      <div class="page" id="page-1">
+        <div id="moetContent"></div>
+      </div>
+
+      <!-- Mag -->
+      <div class="page" id="page-2">
+        <div id="magContent"></div>
+      </div>
+
+      <!-- Idee -->
+      <div class="page" id="page-3">
+        <div id="ideeContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ===== STATE =====
+    let tasks = JSON.parse(localStorage.getItem('injehoofd_tasks') || '[]');
+    let editingId = null;
+    let selectedType = null;
+    let selectedWhen = 'vandaag';
+    let customDate = null;
+
+    // ===== HELPERS =====
+    function save() {
+      localStorage.setItem('injehoofd_tasks', JSON.stringify(tasks));
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function todayStr() {
+      const d = new Date();
+      return d.toISOString().slice(0, 10);
+    }
+
+    function isToday(dateStr) {
+      return dateStr === todayStr();
+    }
+
+    function isThisWeek(dateStr) {
+      if (!dateStr) return false;
+      const d = new Date(dateStr + 'T12:00:00');
+      const now = new Date();
+      const start = new Date(now);
+      start.setHours(0,0,0,0);
+      start.setDate(now.getDate() - now.getDay() + 1); // maandag
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      return d >= start && d <= end;
+    }
+
+    function isThisMonth(dateStr) {
+      if (!dateStr) return false;
+      const d = new Date(dateStr + 'T12:00:00');
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return null;
+      if (isToday(dateStr)) return 'Vandaag';
+      const d = new Date(dateStr + 'T12:00:00');
+      const opts = { weekday: 'short', day: 'numeric', month: 'short' };
+      return d.toLocaleDateString('nl-NL', opts);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    // ===== RENDER TASK CARD =====
+    function renderCard(task, showType = true) {
+      const doneClass = task.done ? 'done' : '';
+      const checked = task.done ? 'checked' : '';
+      const typeClass = `type-${task.type}`;
+
+      let meta = '';
+      if (showType) {
+        meta += `<span class="meta-tag type type-${task.type}">${task.type}</span>`;
+      }
+      if (task.date) {
+        const label = formatDate(task.date);
+        if (label) meta += `<span class="meta-tag">${label}</span>`;
+      }
+
+      return `
+        <div class="task-card ${doneClass} ${typeClass}" data-id="${task.id}">
+          <div class="checkbox ${checked}" data-id="${task.id}"></div>
+          <div class="task-content" data-id="${task.id}">
+            <div class="task-text">${escapeHtml(task.text)}</div>
+            ${meta ? `<div class="task-meta">${meta}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ===== RENDER PAGES =====
+    function render() {
+      // Clean old done items that are not from today (move to pure archive logic)
+      // We keep done items that were done today visible with strikethrough,
+      // older done items go to archive section.
+
+      renderVandaag();
+      renderCategory('Moet', 'moetContent');
+      renderCategory('Mag', 'magContent');
+      renderCategory('Idee', 'ideeContent');
+    }
+
+    function renderVandaag() {
+      const container = document.getElementById('vandaagContent');
+      const today = todayStr();
+
+      // Active today tasks (not done, or done today)
+      const todayActive = tasks.filter(t => 
+        !t.done && t.date === today
+      );
+
+      // Done today (still show with strikethrough)
+      const todayDone = tasks.filter(t => 
+        t.done && t.doneDate === today
+      );
+
+      // If little space / empty, also show some Mag + Idee without date or future
+      const magSuggestions = tasks.filter(t => 
+        !t.done && t.type === 'Mag' && (!t.date || t.date > today)
+      ).slice(0, 2);
+
+      const ideeSuggestions = tasks.filter(t => 
+        !t.done && t.type === 'Idee' && (!t.date || t.date > today)
+      ).slice(0, 2);
+
+      let html = '';
+
+      if (todayActive.length === 0 && todayDone.length === 0) {
+        html += `
+          <div class="empty-state">
+            <div class="emoji">🌤️</div>
+            <p>Niets gepland voor vandaag.<br>Lekker rustig, of voeg iets toe.</p>
+          </div>
+        `;
+      } else {
+        if (todayActive.length) {
+          html += `<div class="section-title">Voor vandaag</div>`;
+          html += `<div class="task-list">${todayActive.map(t => renderCard(t)).join('')}</div>`;
+        }
+        if (todayDone.length) {
+          html += `<div class="section-title" style="margin-top:20px">Gedaan vandaag</div>`;
+          html += `<div class="task-list">${todayDone.map(t => renderCard(t)).join('')}</div>`;
+        }
+      }
+
+      // Suggestions when there's room
+      if (todayActive.length < 4) {
+        if (magSuggestions.length) {
+          html += `<div class="section-title" style="margin-top:28px">Misschien leuk (Mag)</div>`;
+          html += `<div class="task-list">${magSuggestions.map(t => renderCard(t)).join('')}</div>`;
+        }
+        if (ideeSuggestions.length) {
+          html += `<div class="section-title" style="margin-top:20px">Ideeën</div>`;
+          html += `<div class="task-list">${ideeSuggestions.map(t => renderCard(t)).join('')}</div>`;
+        }
+      }
+
+      container.innerHTML = html;
+      bindCardEvents(container);
+    }
+
+    function renderCategory(type, containerId) {
+      const container = document.getElementById(containerId);
+      const active = tasks.filter(t => t.type === type && !t.done);
+      const archived = tasks.filter(t => t.type === type && t.done);
+
+      // Sort active: with date first (soonest), then no date
+      active.sort((a, b) => {
+        if (a.date && b.date) return a.date.localeCompare(b.date);
+        if (a.date) return -1;
+        if (b.date) return 1;
+        return 0;
+      });
+
+      // Archive: newest done first
+      archived.sort((a, b) => (b.doneDate || '').localeCompare(a.doneDate || ''));
+
+      let html = '';
+
+      if (active.length === 0 && archived.length === 0) {
+        const msgs = {
+          Moet: 'Nog geen verplichtingen. Lekker luchtig.',
+          Mag: 'Nog niks in de “mag”-categorie. Voeg iets leuks toe.',
+          Idee: 'Je ideeënarchief is nog leeg. Noteer maar los!'
+        };
+        html = `
+          <div class="empty-state">
+            <div class="emoji">${type === 'Moet' ? '🏋️' : type === 'Mag' ? '💡' : '💭'}</div>
+            <p>${msgs[type]}</p>
+          </div>
+        `;
+      } else {
+        if (active.length) {
+          // Group a bit
+          const soon = active.filter(t => t.date && (isToday(t.date) || isThisWeek(t.date)));
+          const later = active.filter(t => t.date && !isToday(t.date) && !isThisWeek(t.date));
+          const noDate = active.filter(t => !t.date);
+
+          if (soon.length) {
+            html += `<div class="section-title">Binnenkort</div>`;
+            html += `<div class="task-list">${soon.map(t => renderCard(t, false)).join('')}</div>`;
+          }
+          if (later.length) {
+            html += `<div class="section-title">Later</div>`;
+            html += `<div class="task-list">${later.map(t => renderCard(t, false)).join('')}</div>`;
+          }
+          if (noDate.length) {
+            html += `<div class="section-title">Geen datum</div>`;
+            html += `<div class="task-list">${noDate.map(t => renderCard(t, false)).join('')}</div>`;
+          }
+        }
+
+        if (archived.length) {
+          html += `<div class="archive-sep">Archief</div>`;
+          html += `<div class="task-list">${archived.map(t => renderCard(t, false)).join('')}</div>`;
+        }
+      }
+
+      container.innerHTML = html;
+      bindCardEvents(container);
+    }
+
+    function bindCardEvents(container) {
+      container.querySelectorAll('.checkbox').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleDone(el.dataset.id);
+        });
+      });
+      container.querySelectorAll('.task-content').forEach(el => {
+        el.addEventListener('click', () => {
+          startEdit(el.dataset.id);
+        });
+      });
+    }
+
+    // ===== ACTIONS =====
+    function toggleDone(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+
+      if (task.done) {
+        // Reactivate → put on today
+        task.done = false;
+        task.doneDate = null;
+        task.date = todayStr();
+        showToast('Teruggezet op Vandaag');
+      } else {
+        task.done = true;
+        task.doneDate = todayStr();
+        showToast('Afgevinkt ✓');
+      }
+      save();
+      render();
+    }
+
+    function startEdit(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+
+      editingId = id;
+      document.getElementById('editingBanner').classList.add('show');
+
+      // Go to Vandaag tab
+      document.getElementById('pages').scrollTo({ left: 0, behavior: 'smooth' });
+      updateTabs(0);
+
+      const input = document.getElementById('mainInput');
+      input.value = task.text;
+      selectedType = task.type;
+      selectedWhen = task.date ? (isToday(task.date) ? 'vandaag' : 'datum') : 'vandaag';
+      customDate = task.date && !isToday(task.date) ? task.date : null;
+
+      // Open options
+      document.getElementById('options').classList.add('open');
+      document.getElementById('inputWrapper').classList.add('focused');
+
+      // Set chips
+      document.querySelectorAll('#typeChips .chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.type === selectedType);
+      });
+      document.querySelectorAll('#whenChips .chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.when === selectedWhen);
+      });
+
+      const dateInput = document.getElementById('dateInput');
+      if (selectedWhen === 'datum') {
+        dateInput.classList.add('show');
+        dateInput.value = customDate || '';
+      } else {
+        dateInput.classList.remove('show');
+      }
+
+      updateSaveBtn();
+      input.focus();
+      // auto grow
+      input.style.height = 'auto';
+      input.style.height = input.scrollHeight + 'px';
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      document.getElementById('editingBanner').classList.remove('show');
+      resetInput();
+    }
+
+    function resetInput() {
+      const input = document.getElementById('mainInput');
+      input.value = '';
+      input.style.height = 'auto';
+      selectedType = null;
+      selectedWhen = 'vandaag';
+      customDate = null;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      document.getElementById('dateInput').classList.remove('show');
+      document.getElementById('dateInput').value = '';
+      document.getElementById('options').classList.remove('open');
+      document.getElementById('inputWrapper').classList.remove('focused');
+      updateSaveBtn();
+    }
+
+    function saveTask() {
+      const text = document.getElementById('mainInput').value.trim();
+      if (!text || !selectedType) return;
+
+      let date = null;
+      if (selectedWhen === 'vandaag') date = todayStr();
+      else if (selectedWhen === 'week') {
+        // next few days - just set to today + 3 for simplicity, or leave flexible
+        const d = new Date();
+        d.setDate(d.getDate() + 3);
+        date = d.toISOString().slice(0, 10);
+      } else if (selectedWhen === 'maand') {
+        const d = new Date();
+        d.setDate(d.getDate() + 14);
+        date = d.toISOString().slice(0, 10);
+      } else if (selectedWhen === 'datum' && customDate) {
+        date = customDate;
+      }
+
+      if (editingId) {
+        const task = tasks.find(t => t.id === editingId);
+        if (task) {
+          task.text = text;
+          task.type = selectedType;
+          task.date = date;
+          // if it was done, keep done status unless we want to force active
+        }
+        showToast('Bijgewerkt');
+        cancelEdit();
+      } else {
+        tasks.unshift({
+          id: uid(),
+          text,
+          type: selectedType,
+          date,
+          done: false,
+          doneDate: null,
+          created: Date.now()
+        });
+        showToast('Opgeslagen');
+        resetInput();
+      }
+
+      save();
+      render();
+    }
+
+    function updateSaveBtn() {
+      const text = document.getElementById('mainInput').value.trim();
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = !(text && selectedType);
+      btn.textContent = editingId ? 'Opslaan wijzigingen' : 'Opslaan';
+    }
+
+    // ===== INPUT EVENTS =====
+    const mainInput = document.getElementById('mainInput');
+    const options = document.getElementById('options');
+    const inputWrapper = document.getElementById('inputWrapper');
+
+    mainInput.addEventListener('focus', () => {
+      options.classList.add('open');
+      inputWrapper.classList.add('focused');
+    });
+
+    mainInput.addEventListener('input', () => {
+      mainInput.style.height = 'auto';
+      mainInput.style.height = mainInput.scrollHeight + 'px';
+      updateSaveBtn();
+    });
+
+    // Type chips
+    document.getElementById('typeChips').addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      document.querySelectorAll('#typeChips .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedType = chip.dataset.type;
+      updateSaveBtn();
+    });
+
+    // When chips
+    document.getElementById('whenChips').addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      document.querySelectorAll('#whenChips .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedWhen = chip.dataset.when;
+
+      const dateInput = document.getElementById('dateInput');
+      if (selectedWhen === 'datum') {
+        dateInput.classList.add('show');
+        dateInput.focus();
+      } else {
+        dateInput.classList.remove('show');
+        customDate = null;
+      }
+    });
+
+    document.getElementById('dateInput').addEventListener('change', (e) => {
+      customDate = e.target.value;
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', saveTask);
+
+    // Click outside to close options (if not editing)
+    document.addEventListener('click', (e) => {
+      if (!inputWrapper.contains(e.target) && !editingId) {
+        if (!mainInput.value.trim()) {
+          options.classList.remove('open');
+          inputWrapper.classList.remove('focused');
+        }
+      }
+    });
+
+    // ===== TABS + SWIPE =====
+    const pages = document.getElementById('pages');
+    const tabButtons = document.querySelectorAll('.tab');
+
+    function updateTabs(index) {
+      tabButtons.forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+    }
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const index = parseInt(btn.dataset.index);
+        pages.scrollTo({ left: index * pages.clientWidth, behavior: 'smooth' });
+        updateTabs(index);
+      });
+    });
+
+    // Sync tabs on scroll
+    let scrollTimeout;
+    pages.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const index = Math.round(pages.scrollLeft / pages.clientWidth);
+        updateTabs(index);
+      }, 50);
+    });
+
+    // Prevent pull-to-refresh weirdness a bit
+    document.body.addEventListener('touchmove', (e) => {
+      if (e.target.closest('.pages') === null && e.target.closest('.page') === null) {
+        // allow
+      }
+    }, { passive: true });
+
+    // ===== INIT =====
+    render();
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
